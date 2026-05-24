@@ -9,7 +9,7 @@ const cookieParser = require("cookie-parser");
 const authRoute = require("./Routes/AuthRoute");
 
 
-const allowedOrigins = ["http://localhost:3000", "http://localhost:3001"];
+const allowedOrigins = [process.env.FRONTEND_URL,process.env.DASHBOARD_URL];
 app.use(cors({
     origin: (origin, callback) => {
         if (allowedOrigins.includes(origin)){
