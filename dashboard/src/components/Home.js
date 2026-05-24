@@ -4,6 +4,7 @@ import TopBar from "./TopBar";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import GeneralContext from "./GeneralContext";
+import { FRONTEND_URL, buildUrl } from "../config/urls";
 
 const Home = () => {
   const context = useContext(GeneralContext);
@@ -11,7 +12,7 @@ const Home = () => {
   useEffect(() => {
     if (!context.authChecked) return;
     if (!context.isAuthenticated) {
-      window.location.assign("http://localhost:3000/login");
+      window.location.assign(buildUrl("/login", FRONTEND_URL));
     }
   }, [context.authChecked, context.isAuthenticated]);
 
