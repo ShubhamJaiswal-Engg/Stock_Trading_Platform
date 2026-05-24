@@ -3,6 +3,7 @@ import axios from "axios";
 
 import BuyActionWindow from "./BuyActionWindow";
 import SellActionWindow from "./SellActionWindow";
+import { BACKEND_URL } from "../config/urls";
 
 const GeneralContext = createContext();
 
@@ -23,7 +24,9 @@ export const GeneralContextProvider = (props) => {
   useEffect(() => {
     const fetchUserInfo = async () => {
       try {
-        const { data } = await axios.get("http://localhost:3002/me");
+        const { data } = await axios.get(`${BACKEND_URL}/me`, {
+          withCredentials: true,
+        });
 
         const username = data?.user?.username || "";
         const email = data?.user?.email || "";
@@ -33,7 +36,7 @@ export const GeneralContextProvider = (props) => {
 
         setUserName(displayName);
         setUserEmail(email);
-        setIsAuthenticated(true);
+        setIsAuthenticated(Boolean(data?.success));
         setAuthChecked(true);
 
         if (displayName !== "Guest") {
