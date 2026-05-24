@@ -8,6 +8,7 @@ import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
 import GeneralContext from "./GeneralContext";
 import axios from "axios";
+import { BACKEND_URL, FRONTEND_URL, buildUrl } from "../config/urls";
 
 const Menu = ({ pageTitle = "Dashboard" }) => {
   const [selectedMenu, setSelectedMenu] = useState(0);
@@ -62,7 +63,7 @@ const Menu = ({ pageTitle = "Dashboard" }) => {
     try {
       // Token cookie is httpOnly, so it must be cleared by the server.
       await axios.post(
-        "http://localhost:3002/logout",
+        `${BACKEND_URL}/logout`,
         {},
         {
           withCredentials: true,
@@ -74,7 +75,7 @@ const Menu = ({ pageTitle = "Dashboard" }) => {
     } finally {
       localStorage.removeItem("username");
       sessionStorage.removeItem("dashboard_welcome_shown");
-      window.location.replace("http://localhost:3000");
+      window.location.replace(buildUrl("/", FRONTEND_URL));
     }
   };
 
