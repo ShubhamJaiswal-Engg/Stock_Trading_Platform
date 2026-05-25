@@ -1,6 +1,7 @@
 import React , { useState} from 'react'
 import { Link }from 'react-router-dom'
 import LogoutIcon from "@mui/icons-material/Logout";
+import { FRONTEND_URL, buildUrl } from "../../config/urls";
 
 const ForgetNav = () => {
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
@@ -10,7 +11,7 @@ const ForgetNav = () => {
 
   const logOut = () => {
     setIsProfileDropdownOpen((prev) => !prev);
-    window.location.replace("http://localhost:3000/login")
+    window.location.replace(buildUrl("/login", FRONTEND_URL));
   }
 
   return (
