@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom';
 import useAuthStatus from "./auth/useAuthStatus";
 import axios from 'axios'
+import { BACKEND_URL, DASHBOARD_URL, FRONTEND_URL, buildUrl } from "../config/urls";
 
 function NavBar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -15,7 +16,7 @@ function NavBar() {
     try {
       // Token cookie is httpOnly, so it must be cleared by the server.
       await axios.post(
-        "http://localhost:3002/logout",
+        `${BACKEND_URL}/logout`,
         {},
         {
           withCredentials: true,
@@ -25,7 +26,7 @@ function NavBar() {
       // Even if the request fails, still clear local state and redirect.
       console.error(e);
     } finally {
-      window.location.replace("http://localhost:3000/signup");
+      window.location.replace(buildUrl("/signup", FRONTEND_URL));
     }
   };
 
@@ -63,7 +64,7 @@ function NavBar() {
               {isCheckingAuth ? null : isAuthenticated ? (
                 <a
                   className="block text-red-500"
-                  href="http://localhost:3001"
+                  href={DASHBOARD_URL}
                   onClick={handleMenuClick}
                 >
                   <div className={`${menuClass} text-red-600 hover:text-red-600`}>Dashboard</div>
