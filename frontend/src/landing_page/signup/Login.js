@@ -4,6 +4,7 @@ import axios from "axios";
 import EmailIcon from '@mui/icons-material/Email';
 import LockIcon from '@mui/icons-material/Lock';
 import { ToastContainer, toast } from "react-toastify";
+import { BACKEND_URL, DASHBOARD_URL, buildUrl } from "../../config/urls";
 function Login() {
   
   const [inputValue, setInputValue] = useState({
@@ -58,7 +59,7 @@ function Login() {
     setIsLoading(true);
     try {
       const { data } = await axios.post(
-        "http://localhost:3002/login",
+        `${BACKEND_URL}/login`,
         {
           ...inputValue,
         },
@@ -72,7 +73,7 @@ function Login() {
           sessionStorage.setItem("authStatus", "authed");
           // It will save on same tab
           // localStorage.setItem("authStatus", "authed");
-          window.location.replace("http://localhost:3001?login=true");
+          window.location.replace(buildUrl("/?login=true", DASHBOARD_URL));
         }, 2000);
         return; // Keep loader active until redirect
       } else {
