@@ -100,6 +100,22 @@ npm start
 
 8. Open your browser and navigate to `http://localhost:3000`
 
+### Frontend env config (CRA)
+
+This repo contains multiple React apps. The landing app lives in `frontend/`.
+
+- CRA only exposes env vars prefixed with `REACT_APP_`.
+- Copy [frontend/.env.example](frontend/.env) to `frontend/.env` and restart the dev server.
+
+Example:
+```env
+REACT_APP_FRONTEND_URL=http://localhost:3000
+REACT_APP_DASHBOARD_URL=http://localhost:3001
+REACT_APP_BACKEND_URL=http://localhost:3002
+```
+
+The landing app reads these values from [frontend/src/config/urls.js](frontend/src/config/urls.js) and falls back to localhost defaults if not set.
+
 <!---
 ## 📂 Project Structure
 
