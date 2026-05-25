@@ -1,6 +1,7 @@
 import React from 'react'
 import { Link } from "react-router-dom"
 import useAuthStatus from "./auth/useAuthStatus.js";
+import { DASHBOARD_URL } from "../config/urls";
 
 
 function OpenAccount() {
@@ -12,7 +13,7 @@ function OpenAccount() {
              {isCheckingAuth ? null : isAuthenticated ? (
                     <a
                         className='bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-lg mb-12'
-                        href="http://localhost:3001"
+                        href={DASHBOARD_URL}
                     >
                         Go to Dashboard
                     </a>
