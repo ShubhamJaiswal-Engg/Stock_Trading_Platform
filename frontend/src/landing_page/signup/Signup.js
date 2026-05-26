@@ -5,7 +5,7 @@ import EmailIcon from '@mui/icons-material/Email';
 import LockIcon from '@mui/icons-material/Lock';
 import PersonIcon from '@mui/icons-material/Person';
 import { ToastContainer, toast } from "react-toastify";
-import { BACKEND_URL, DASHBOARD_URL, buildUrl } from "../../config/urls";
+import { AUTH_STATUS_KEY, BACKEND_URL, DASHBOARD_URL, buildUrl } from "../../config/urls";
 function Signup() {
   const [isLoading,setIsLoading ] = useState(false)
   const [inputValue, setInputValue] = useState({
@@ -83,7 +83,7 @@ function Signup() {
       if (success) {
         handleSuccess(message);
         setTimeout(() => {
-          sessionStorage.setItem("authStatus", "authed");
+          sessionStorage.setItem(AUTH_STATUS_KEY || "authStatus", "authed");
           // It will save on same tab
           // localStorage.setItem("authStatus", "authed");
           window.location.replace(buildUrl("/?signup=true", DASHBOARD_URL));
