@@ -28,19 +28,22 @@ export const GeneralContextProvider = (props) => {
           withCredentials: true,
         });
 
-        const username = data?.user?.username || "";
-        const email = data?.user?.email || "";
+        const isAuthed = Boolean(data?.success);
+        const username = isAuthed ? data?.user?.username || "" : "";
+        const email = isAuthed ? data?.user?.email || "" : "";
         const displayName = username
           ? username.charAt(0).toUpperCase() + username.slice(1)
           : "Guest";
 
         setUserName(displayName);
         setUserEmail(email);
-        setIsAuthenticated(Boolean(data?.success));
+        setIsAuthenticated(isAuthed);
         setAuthChecked(true);
 
-        if (displayName !== "Guest") {
+        if (isAuthed && displayName !== "Guest") {
           localStorage.setItem("username", displayName);
+        } else {
+          localStorage.removeItem("username");
         }
       } catch (e) {
         setIsAuthenticated(false);
