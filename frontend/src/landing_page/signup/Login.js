@@ -4,7 +4,7 @@ import axios from "axios";
 import EmailIcon from '@mui/icons-material/Email';
 import LockIcon from '@mui/icons-material/Lock';
 import { ToastContainer, toast } from "react-toastify";
-import { BACKEND_URL, DASHBOARD_URL, buildUrl } from "../../config/urls";
+import { AUTH_STATUS_KEY, BACKEND_URL, DASHBOARD_URL, buildUrl } from "../../config/urls";
 function Login() {
   
   const [inputValue, setInputValue] = useState({
@@ -70,7 +70,7 @@ function Login() {
         handleSuccess(message);
         setTimeout(() => {
           // Same-tab redirect to the dashboard app
-          sessionStorage.setItem("authStatus", "authed");
+          sessionStorage.setItem(AUTH_STATUS_KEY || "authStatus", "authed");
           // It will save on same tab
           // localStorage.setItem("authStatus", "authed");
           window.location.replace(buildUrl("/?login=true", DASHBOARD_URL));
