@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { BACKEND_URL } from "../../config/urls.js"
 
 const AUTH_STATUS_KEY = "authStatus";
 
@@ -19,7 +20,7 @@ export default function useAuthStatus() {
 
     const check = async () => {
       try {
-        await axios.get("http://localhost:3002/me");
+        await axios.get(`${BACKEND_URL}/me`);
         if (!isMounted) return;
         setAuthStatus("authed");
         sessionStorage.setItem(AUTH_STATUS_KEY, "authed");
