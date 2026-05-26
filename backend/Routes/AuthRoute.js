@@ -3,11 +3,12 @@ const { Holdings, Positions, Orders,NewOrder } = require("../controllers/AuthCon
 const{ sendResetOtp, resetPassword, verifyOtp  } = require('../controllers/smtpController')
 const router = require("express").Router();
 const { requireAuth } = require("../middleware/requireAuth");
+const { optionalAuth } = require("../middleware/optionalAuth");
 
 router.post("/signup", Signup);
 router.post("/login", Login);
 router.post("/logout", Logout);
-router.get("/me", requireAuth, Me);
+router.get("/me", optionalAuth, Me);
 
 router.get("/allHoldings", requireAuth, Holdings);
 router.get("/allPositions", requireAuth, Positions);

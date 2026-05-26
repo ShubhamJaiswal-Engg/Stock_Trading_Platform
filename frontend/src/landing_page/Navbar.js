@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom';
 import useAuthStatus from "./auth/useAuthStatus";
 import axios from 'axios'
-import { BACKEND_URL, DASHBOARD_URL, FRONTEND_URL, buildUrl } from "../config/urls";
+import { AUTH_STATUS_KEY, BACKEND_URL, DASHBOARD_URL, FRONTEND_URL, buildUrl } from "../config/urls";
 
 function NavBar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -26,6 +26,7 @@ function NavBar() {
       // Even if the request fails, still clear local state and redirect.
       console.error(e);
     } finally {
+      sessionStorage.removeItem(AUTH_STATUS_KEY || "authStatus");
       window.location.replace(buildUrl("/signup", FRONTEND_URL));
     }
   };
