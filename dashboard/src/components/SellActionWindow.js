@@ -5,6 +5,7 @@ import axios from "axios";
 
 import GeneralContext from "./GeneralContext";
 import { toast } from "react-toastify";
+import { BACKEND_URL } from "../config/urls";
 
 
 import "./BuyActionWindow.css";
@@ -31,7 +32,7 @@ const SellActionWindow = ({ uid, price, percent }) => {
 
   const handleSellClick = async () => {
     try {
-      await axios.post("http://localhost:3002/newOrder", {
+      await axios.post(`${BACKEND_URL}/newOrder`, {
         name: uid,
         qty: stockQuantity,
         price: stockPrice,
