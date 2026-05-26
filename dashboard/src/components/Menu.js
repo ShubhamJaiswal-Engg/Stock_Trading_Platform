@@ -75,6 +75,7 @@ const Menu = ({ pageTitle = "Dashboard" }) => {
     } finally {
       localStorage.removeItem("username");
       localStorage.removeItem("dashboard_welcome_shown");
+      localStorage.removeItem("token");
       window.location.replace(buildUrl("/", FRONTEND_URL));
     }
   };

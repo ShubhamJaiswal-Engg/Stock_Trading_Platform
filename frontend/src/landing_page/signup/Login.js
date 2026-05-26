@@ -74,7 +74,11 @@ function Login() {
           localStorage.setItem(AUTH_STATUS_KEY || "authStatus", "authed");
           // It will save on same tab
           // localStorage.setItem("authStatus", "authed");
-          window.location.replace(buildUrl("/?login=true", DASHBOARD_URL));
+          // Different origin (dashboard) can't read this origin's localStorage.
+          // Pass token via URL hash so dashboard can store it, then it will clean the URL.
+          window.location.replace(
+            buildUrl(`/?login=true#token=${encodeURIComponent(data.token || "")}`, DASHBOARD_URL)
+          );
         }, 2000);
         return; // Keep loader active until redirect
       } else {

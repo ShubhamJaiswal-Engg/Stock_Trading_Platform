@@ -30,7 +30,7 @@ module.exports.Logout = async (req, res) => {
   }
 };
 
-module.exports.Signup = async (req, res, next) => {
+module.exports.Signup = async (req, res) => {
   try {
     const { email, password, username, createdAt } = req.body;
     const existingUser = await User.findOne({ email });
@@ -43,16 +43,15 @@ module.exports.Signup = async (req, res, next) => {
       ...cookieOptions,
       expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
     });
-    res
+    return res
       .status(201)
-      .json({ message: "User signed in successfully", success: true});
-    next();
+      .json({ message: "User signed in successfully", success: true, token });
   } catch (error) {
     console.error(error);
   }
 };
 
-module.exports.Login = async (req, res, next) => {
+module.exports.Login = async (req, res) => {
     try {
       const { email, password } = req.body;
       if(!email || !password ){
@@ -71,8 +70,7 @@ module.exports.Login = async (req, res, next) => {
          ...cookieOptions,
          expires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 1 day expiry
        });
-       res.status(201).json({ message: "User logged in successfully", success: true, token: token });// Add userId here
-       next()
+       return res.status(201).json({ message: "User logged in successfully", success: true, token });// Add userId here
     } catch (error) {
       console.error(error);
     }

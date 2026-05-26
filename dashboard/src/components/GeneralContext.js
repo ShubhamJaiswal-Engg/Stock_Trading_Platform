@@ -23,7 +23,30 @@ export const GeneralContextProvider = (props) => {
 
   useEffect(() => {
     const fetchUserInfo = async () => {
-      const token = localStorage.getItem('token')
+      // Frontend and dashboard are different origins, so localStorage is not shared.
+      // When coming from frontend after login/signup we accept token from URL hash.
+      let token = localStorage.getItem('token');
+
+      try {
+        const hash = window.location.hash || "";
+        const hashParams = new URLSearchParams(hash.startsWith("#") ? hash.slice(1) : hash);
+        const incomingToken = hashParams.get("token");
+        if (!token && incomingToken) {
+          token = incomingToken;
+          localStorage.setItem('token', incomingToken);
+
+          // Remove token from URL (keep other params like login/signup for welcome toast)
+          hashParams.delete("token");
+          const nextHash = hashParams.toString();
+          const nextUrl =
+            window.location.pathname +
+            window.location.search +
+            (nextHash ? `#${nextHash}` : "");
+          window.history.replaceState(null, "", nextUrl);
+        }
+      } catch (_e) {
+        // Ignore URL parsing issues
+      }
       try {
         const { data } = await axios.get(`${BACKEND_URL}/me`, {
           headers: {

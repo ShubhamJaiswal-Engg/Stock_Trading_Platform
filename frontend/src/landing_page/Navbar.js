@@ -27,6 +27,7 @@ function NavBar() {
       console.error(e);
     } finally {
       localStorage.removeItem(AUTH_STATUS_KEY || "authStatus");
+      localStorage.removeItem("token");
       window.location.replace(buildUrl("/signup", FRONTEND_URL));
     }
   };
