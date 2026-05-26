@@ -8,6 +8,7 @@ import { toast } from "react-toastify";
 
 
 import "./BuyActionWindow.css";
+import { BACKEND_URL } from "../config/urls";
 
 const BuyActionWindow = ({ uid, price, percent }) => {
   const { closeBuyWindow, setOrderChecker } = useContext(GeneralContext); 
@@ -30,7 +31,7 @@ const BuyActionWindow = ({ uid, price, percent }) => {
 
   const handleBuyClick = async () => {
     try {
-      await axios.post("http://localhost:3002/newOrder", {
+      await axios.post(`${BACKEND_URL}/newOrder`, {
         name: uid,
         qty: stockQuantity,
         price: stockPrice,
