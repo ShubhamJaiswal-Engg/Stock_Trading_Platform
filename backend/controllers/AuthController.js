@@ -8,9 +8,8 @@ const bcrypt = require("bcryptjs");
 
 const cookieOptions = {
   httpOnly: true,
-  secure: false, // set to true if using HTTPS
-  sameSite: "lax", // or "none" if using HTTPS
-  domain: "localhost",
+  secure:  process.env.NODE_ENV === 'production', // dynamic true if using HTTPS
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // or "none" if using HTTPS
   path: "/",
 };
 
