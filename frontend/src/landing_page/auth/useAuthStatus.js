@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { BACKEND_URL } from "../../config/urls.js"
+import { BACKEND_URL,AUTH_STATUS_KEY} from "../../config/urls.js"
 
-const AUTH_STATUS_KEY = "authStatus";
 
 /**
  * Lightweight auth status hook.
