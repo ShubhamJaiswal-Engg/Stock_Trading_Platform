@@ -23,7 +23,7 @@ const Home = () => {
     }
 
     // Check Dashboard's own sessionStorage (Port 3001) so we don't rely on Port 3000
-    const hasSeenWelcome = sessionStorage.getItem("dashboard_welcome_shown");
+    const hasSeenWelcome = localStorage.getItem("dashboard_welcome_shown");
 
     const urlParams = new URLSearchParams(window.location.search);
     const isSignup = urlParams.get("signup") === "true";
@@ -42,7 +42,7 @@ const Home = () => {
         toastId: "welcome-toast",
       });
       // Mark as shown so it doesn't pop up again when user refreshes the page
-      sessionStorage.setItem("dashboard_welcome_shown", "true");
+      localStorage.setItem("dashboard_welcome_shown", "true");
 
     }
     // Clean up the URL parameters if they exist

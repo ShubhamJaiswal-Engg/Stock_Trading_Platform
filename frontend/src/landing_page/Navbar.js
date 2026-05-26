@@ -26,7 +26,7 @@ function NavBar() {
       // Even if the request fails, still clear local state and redirect.
       console.error(e);
     } finally {
-      sessionStorage.removeItem(AUTH_STATUS_KEY || "authStatus");
+      localStorage.removeItem(AUTH_STATUS_KEY || "authStatus");
       window.location.replace(buildUrl("/signup", FRONTEND_URL));
     }
   };

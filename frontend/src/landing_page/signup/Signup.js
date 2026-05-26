@@ -83,7 +83,7 @@ function Signup() {
       if (success) {
         handleSuccess(message);
         setTimeout(() => {
-          sessionStorage.setItem(AUTH_STATUS_KEY || "authStatus", "authed");
+          localStorage.setItem(AUTH_STATUS_KEY || "authStatus", "authed");
           // It will save on same tab
           // localStorage.setItem("authStatus", "authed");
           window.location.replace(buildUrl("/?signup=true", DASHBOARD_URL));

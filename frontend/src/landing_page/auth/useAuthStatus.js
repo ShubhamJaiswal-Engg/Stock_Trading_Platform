@@ -17,7 +17,7 @@ export default function useAuthStatus() {
   const storageKey = AUTH_STATUS_KEY || FALLBACK_AUTH_STATUS_KEY;
 
   const [authStatus, setAuthStatus] = useState(() => {
-    const stored = sessionStorage.getItem(storageKey);
+    const stored = localStorage.getItem(storageKey);
     if (stored === "authed") return "checking";
     return stored || "guest";
   });
@@ -39,22 +39,22 @@ export default function useAuthStatus() {
         if (!data?.success) throw new Error("Not authenticated");
         if (!isMounted) return;
         setAuthStatus("authed");
-        sessionStorage.setItem(storageKey, "authed");
+        localStorage.setItem(storageKey, "authed");
       } catch (e) {
         if (!isMounted) return;
         setAuthStatus("guest");
-        sessionStorage.setItem(storageKey, "guest");
+        localStorage.setItem(storageKey, "guest");
       } finally {
         inFlightAuthCheck = null;
       }
     };
 
-    const stored = sessionStorage.getItem(storageKey);
+    const stored = localStorage.getItem(storageKey);
     if (stored === "authed") {
       check();
     } else {
       // Avoid spamming /me (and 401s in console) when user is clearly a guest.
-      if (stored !== "guest") sessionStorage.setItem(storageKey, "guest");
+      if (stored !== "guest") localStorage.setItem(storageKey, "guest");
     }
 
     return () => {

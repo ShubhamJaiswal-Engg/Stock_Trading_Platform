@@ -70,7 +70,7 @@ function Login() {
         handleSuccess(message);
         setTimeout(() => {
           // Same-tab redirect to the dashboard app
-          sessionStorage.setItem(AUTH_STATUS_KEY || "authStatus", "authed");
+          localStorage.setItem(AUTH_STATUS_KEY || "authStatus", "authed");
           // It will save on same tab
           // localStorage.setItem("authStatus", "authed");
           window.location.replace(buildUrl("/?login=true", DASHBOARD_URL));
