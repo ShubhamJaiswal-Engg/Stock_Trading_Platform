@@ -15,8 +15,47 @@ import Login from './landing_page/signup/Login'
 import NotFound from './landing_page/NotFound';
 import RedirectIfAuthenticated from "./landing_page/auth/RedirectIfAuthenticated";
 import ForgetPasswordPage from './landing_page/resetUserPass/ForgetPassPage';
+import { AUTH_STATUS_KEY } from "./config/urls";
 
 axios.defaults.withCredentials = true;
+
+axios.interceptors.request.use((config) => {
+  let token = null;
+  try {
+    token = localStorage.getItem("token");
+  } catch {
+    token = null;
+  }
+  if (token) {
+    const headers = config.headers ?? {};
+    if (!headers.Authorization && !headers.authorization) {
+      config.headers = {
+        ...headers,
+        Authorization: `Bearer ${token}`,
+      };
+    }
+  }
+  return config;
+});
+
+// Cross-origin logout handoff: when the dashboard redirects back to frontend with
+// `/#logout=1`, clear frontend auth state immediately and clean the URL.
+(() => {
+  try {
+    const hash = typeof window !== "undefined" ? window.location.hash : "";
+    if (!hash) return;
+    const params = new URLSearchParams(hash.startsWith("#") ? hash.slice(1) : hash);
+    if (params.get("logout") !== "1") return;
+
+    const key = AUTH_STATUS_KEY || "authStatus";
+    localStorage.removeItem(key);
+    localStorage.removeItem("token");
+
+    window.history.replaceState(null, "", window.location.pathname + window.location.search);
+  } catch {
+    // ignore
+  }
+})();
 
 function AppLayout() {
   return (

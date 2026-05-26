@@ -9,6 +9,25 @@ import { GeneralContextProvider } from "./components/GeneralContext";
 
 axios.defaults.withCredentials = true;
 
+axios.interceptors.request.use((config) => {
+  let token = null;
+  try {
+    token = localStorage.getItem("token");
+  } catch {
+    token = null;
+  }
+  if (token) {
+    const headers = config.headers ?? {};
+    if (!headers.Authorization && !headers.authorization) {
+      config.headers = {
+        ...headers,
+        Authorization: `Bearer ${token}`,
+      };
+    }
+  }
+  return config;
+});
+
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(

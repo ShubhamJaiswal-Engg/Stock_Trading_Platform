@@ -76,7 +76,8 @@ const Menu = ({ pageTitle = "Dashboard" }) => {
       localStorage.removeItem("username");
       localStorage.removeItem("dashboard_welcome_shown");
       localStorage.removeItem("token");
-      window.location.replace(buildUrl("/", FRONTEND_URL));
+      // Tell the frontend app to clear its own localStorage too (cross-origin).
+      window.location.replace(buildUrl("/#logout=1", FRONTEND_URL));
     }
   };
 

@@ -148,6 +148,8 @@ export const GeneralContextProvider = (props) => {
           uid={selectedStock.uid}
           price={selectedStock.price}
           percent={selectedStock.percent}
+          closeBuyWindow={handleCloseBuyWindow}
+          setOrderChecker={SetOrderChecker}
         />
       )}
       {isSellWindowOpen && (
@@ -155,6 +157,8 @@ export const GeneralContextProvider = (props) => {
           uid={selectedStock.uid}
           price={selectedStock.price}
           percent={selectedStock.percent}
+          closeSellWindow={handleCloseBuyWindow}
+          setOrderChecker={SetOrderChecker}
         />
       )}
     </GeneralContext.Provider>

@@ -1,17 +1,15 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import axios from "axios";
 
-import GeneralContext from "./GeneralContext";
 import { toast } from "react-toastify";
 import { BACKEND_URL } from "../config/urls";
 
 
 import "./BuyActionWindow.css";
 
-const SellActionWindow = ({ uid, price, percent }) => {
-  const { closeSellWindow, setOrderChecker } = useContext(GeneralContext); 
+const SellActionWindow = ({ uid, price, percent, closeSellWindow, setOrderChecker }) => {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [stockQuantity, setStockQuantity] = useState(1);
