@@ -4,11 +4,12 @@ import axios from 'axios';
 import { toast, ToastContainer } from 'react-toastify';
 import EmailIcon from '@mui/icons-material/Email';
 import LockIcon from '@mui/icons-material/Lock';
+import { BACKEND_URL } from '../../config/urls.js';
 
 const ForgetPassword = () => {
   const navigate = useNavigate();
 
-  const backendUrl = "http://localhost:3002";
+  const backendUrl = BACKEND_URL;
 
   const [email, setEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -72,7 +73,7 @@ const ForgetPassword = () => {
         const {data} = await axios.post(backendUrl + '/reset-password', {email,otp,newPassword});
         data.success ? toast.success(data.message) : toast.error(data.message)
         setTimeout(() => {
-          data.success && navigate('/login')
+          data.success && navigate('/login', { replace: true })
         }, 2000);
        } catch (error) {
         toast.error(getErrorMessage(error));
