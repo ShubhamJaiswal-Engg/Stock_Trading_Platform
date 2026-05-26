@@ -83,6 +83,7 @@ function Signup() {
       if (success) {
         handleSuccess(message);
         setTimeout(() => {
+          localStorage.setItem('token', data.token)
           localStorage.setItem(AUTH_STATUS_KEY || "authStatus", "authed");
           // It will save on same tab
           // localStorage.setItem("authStatus", "authed");
