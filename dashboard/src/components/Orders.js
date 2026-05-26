@@ -2,6 +2,7 @@ import React from "react";
 import { useEffect, useState, useContext } from "react";
 import { Link } from "react-router-dom";
 import GeneralContext from "./GeneralContext";
+import { BACKEND_URL } from "../config/urls";
 
 import axios from "axios";
 
@@ -11,7 +12,7 @@ const Orders = () => {
   const [allOrders, setAllOrders] = useState([]);
 
   useEffect(() => {
-    axios.get("http://localhost:3002/allOrders").then((res) => {
+    axios.get(`${BACKEND_URL}/allOrders`).then((res) => {
       setAllOrders(res.data);
     });
   }, [data.orderChecker]);
