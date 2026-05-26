@@ -6,10 +6,16 @@ const { PositionsModel } = require("../model/PositonsModel");
 const { createSecretToken } = require("../util/SecretToken");
 const bcrypt = require("bcryptjs");
 
+const isHttpsDeployment = [process.env.FRONTEND_URL, process.env.DASHBOARD_URL]
+  .filter(Boolean)
+  .some((url) => String(url).startsWith("https://"));
+
 const cookieOptions = {
   httpOnly: true,
-  secure:  process.env.NODE_ENV === 'production', // dynamic true if using HTTPS
-  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // or "none" if using HTTPS
+  // Use Secure + SameSite=None only when actually on HTTPS.
+  // (If Secure cookies are set on http://localhost, the browser will drop them.)
+  secure: isHttpsDeployment,
+  sameSite: isHttpsDeployment ? "none" : "lax",
   path: "/",
 };
 
@@ -65,7 +71,7 @@ module.exports.Login = async (req, res, next) => {
          ...cookieOptions,
          expires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 1 day expiry
        });
-       res.status(201).json({ message: "User logged in successfully", success: true});// Add userId here
+       res.status(201).json({ message: "User logged in successfully", success: true, token: token });// Add userId here
        next()
     } catch (error) {
       console.error(error);
