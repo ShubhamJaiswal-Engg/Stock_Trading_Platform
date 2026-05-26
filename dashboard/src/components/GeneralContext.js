@@ -23,8 +23,12 @@ export const GeneralContextProvider = (props) => {
 
   useEffect(() => {
     const fetchUserInfo = async () => {
+      const token = localStorage.getItem('token')
       try {
         const { data } = await axios.get(`${BACKEND_URL}/me`, {
+          headers: {
+                    Authorization: `Bearer ${token}`
+               },
           withCredentials: true,
         });
 
