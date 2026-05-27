@@ -44,6 +44,11 @@ app.get("/health", (_req, res) => {
 
 app.use("/", authRoute);
 
+app.get("/",(req,res)=>{
+    res.send("Server is listening");
+})
+
+
 async function start() {
     if (!uri) {
         console.error("MONGO_URL is missing");
