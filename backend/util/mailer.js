@@ -10,6 +10,22 @@ const DEFAULT_FROM_EMAIL =
   process.env.BREVO_SMTP_USER ||
   process.env.BREVO_SMTP_LOGIN;
 
+function isLikelyBrevoSmtpKey(value) {
+  if (!value) return false;
+  const key = String(value).trim();
+  // Brevo SMTP keys are typically prefixed with `xsmtpsib-`.
+  return key.toLowerCase().startsWith("xsmtpsib-");
+}
+
+function getBrevoApiKey() {
+  const raw = process.env.BREVO_API_KEY;
+  if (!raw) return null;
+  const key = String(raw).trim();
+  if (!key) return null;
+  if (isLikelyBrevoSmtpKey(key)) return null;
+  return key;
+}
+
 function withTimeout(ms) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), ms);
@@ -20,8 +36,13 @@ function withTimeout(ms) {
 }
 
 async function sendViaBrevoApi({ toEmail, subject, text, fromEmail, fromName }) {
-  const apiKey = process.env.BREVO_API_KEY;
+  const apiKey = getBrevoApiKey();
   if (!apiKey) {
+    if (isLikelyBrevoSmtpKey(process.env.BREVO_API_KEY)) {
+      throw new Error(
+        "BREVO_API_KEY looks like an SMTP key (xsmtpsib-...). Use a Brevo API key (usually xkeysib-...) or remove BREVO_API_KEY to send via SMTP."
+      );
+    }
     throw new Error("BREVO_API_KEY is missing");
   }
 
@@ -83,7 +104,13 @@ async function sendViaSmtp({ toEmail, subject, text, fromEmail }) {
 
 async function sendTextEmail({ toEmail, subject, text, fromEmail, fromName }) {
   // Prefer Brevo HTTP API in production (avoids outbound SMTP port blocks/timeouts).
-  if (process.env.BREVO_API_KEY) {
+  if (process.env.BREVO_API_KEY && isLikelyBrevoSmtpKey(process.env.BREVO_API_KEY)) {
+    console.warn(
+      "[mailer] BREVO_API_KEY appears to be an SMTP key (xsmtpsib-...). Falling back to SMTP transport."
+    );
+  }
+
+  if (getBrevoApiKey()) {
     return sendViaBrevoApi({ toEmail, subject, text, fromEmail, fromName });
   }
   return sendViaSmtp({ toEmail, subject, text, fromEmail });
