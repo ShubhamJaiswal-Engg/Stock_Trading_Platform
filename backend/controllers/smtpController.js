@@ -11,7 +11,11 @@ function generateOtp() {
 
 function buildOtpMailOptions(userEmail, otp) {
     return {
-        from: process.env.SENDER_EMAIL,
+        from:
+            process.env.SENDER_EMAIL ||
+            process.env.SMTP_USER ||
+            process.env.BREVO_SMTP_USER ||
+            process.env.BREVO_SMTP_LOGIN,
         to: userEmail,
         subject: "Password Reset Otp",
         text: `Your otp for reseting your password is ${otp}. Use this OTP to proceed with resetting your password.`,
@@ -80,11 +84,8 @@ module.exports.sendResetOtp = async (req, res) =>{
         // If the send is still running, attach a late-failure handler.
         if (!mailSentWithinBudget) {
             sendPromise.catch(async (error) => {
-                try {
-                    await invalidateResetOtp(user);
-                } catch (_e) {
-                    // ignore
-                }
+                // Don't invalidate OTP on late failures; otherwise the OTP looks "instantly expired".
+                // User can still retry/resend if they don't receive the email.
                 console.error("sendResetOtp: sendMail failed (late)", error);
             });
         }
@@ -96,16 +97,25 @@ module.exports.sendResetOtp = async (req, res) =>{
 // Request for Otp
 module.exports.verifyOtp = async (req, res) => {
     const {email,otp} = req.body || {};
+    if (!email || !otp) {
+        return res.json({ success: false, message: "Email and OTP is required" });
+    }
     const user = await User.findOne({email});
     if(!user) {
         return res.json({ success: false, message:"User does not exist"});
     }
+
+    // If no OTP was generated (or it was cleared), ask user to resend.
+    if (!user.resetOtp || !user.resetOtpExpiresAt) {
+        return res.json({ success: false, message: "OTP not requested. Please resend OTP" });
+    }
+
     if(user.resetOtpExpiresAt < Date.now()) {
-           return res.json({ success: false, message: "OTP Expired"});
-        }
-    if(user.resetOtp === '' || user.resetOtp !== String(otp)) {
-           return res.json({ success: false, message: "Invalid OTP"});
-        }
+        return res.json({ success: false, message: "OTP Expired"});
+    }
+    if(user.resetOtp !== String(otp)) {
+        return res.json({ success: false, message: "Invalid OTP"});
+    }
 
      return res.json({success:true, message:"Otp Verified Succesfully"});   
 }
@@ -121,10 +131,14 @@ module.exports.resetPassword = async (req, res)=>{
         if(!user) {
            return res.json({ success: false, message: "User not found"});
         }
+
+          if (!user.resetOtp || !user.resetOtpExpiresAt) {
+                return res.json({ success: false, message: "OTP not requested. Please resend OTP" });
+          }
         if(user.resetOtpExpiresAt < Date.now()) {
            return res.json({ success: false, message: "OTP Expired"});
         }
-        if(user.resetOtp === '' || user.resetOtp !== String(otp)) {
+          if(user.resetOtp !== String(otp)) {
            return res.json({ success: false, message: "Invalid OTP"});
         }
 
