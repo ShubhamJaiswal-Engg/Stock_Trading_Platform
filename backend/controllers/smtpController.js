@@ -30,9 +30,20 @@ module.exports.sendResetOtp = async (req, res) =>{
         //              year: 'numeric'
         //             })).replace('{name}',user.name)
     }
-    await transporter.sendMail(mailOption);
+        // Respond fast; send email in background so the user doesn't wait on SMTP.
+        res.json({ success: true, message: "Otp sent to your email"});
 
-    res.json({ success: true, message: "Otp sent to your email"});
+        transporter.sendMail(mailOption).catch(async (error) => {
+            // If sending fails, invalidate OTP so user can request again.
+            try {
+                user.resetOtp = "";
+                user.resetOtpExpiresAt = 0;
+                await user.save();
+            } catch (_e) {
+                // ignore
+            }
+            console.error("sendResetOtp: sendMail failed", error);
+        });
         
     } catch(error) {
         return res.json({success: false, message:error.message});
