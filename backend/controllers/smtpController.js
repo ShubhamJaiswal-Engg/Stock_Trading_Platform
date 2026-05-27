@@ -1,5 +1,5 @@
 const User = require("../model/userModel.js");
-const transporter = require("../config/nodemailer");
+const { sendResetOtpEmail } = require("../util/mailer");
 
 const MAIL_WAIT_MS = Number(process.env.MAIL_WAIT_MS || 6000);
 
@@ -7,19 +7,6 @@ const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function generateOtp() {
     return String(Math.floor(100000 + Math.random() * 900000));
-}
-
-function buildOtpMailOptions(userEmail, otp) {
-    return {
-        from:
-            process.env.SENDER_EMAIL ||
-            process.env.SMTP_USER ||
-            process.env.BREVO_SMTP_USER ||
-            process.env.BREVO_SMTP_LOGIN,
-        to: userEmail,
-        subject: "Password Reset Otp",
-        text: `Your otp for reseting your password is ${otp}. Use this OTP to proceed with resetting your password.`,
-    };
 }
 
 async function invalidateResetOtp(user) {
@@ -56,8 +43,7 @@ module.exports.sendResetOtp = async (req, res) =>{
 
         await user.save();
 
-        const mailOptions = buildOtpMailOptions(user.email, otp);
-        const sendPromise = transporter.sendMail(mailOptions);
+        const sendPromise = sendResetOtpEmail(user.email, otp);
 
         let mailSentWithinBudget = false;
         try {
