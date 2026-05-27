@@ -1,4 +1,13 @@
 require("dotenv").config();
+const dns = require("dns");
+
+// Prefer IPv4 to avoid SMTP failures on hosts without IPv6 egress.
+// This commonly fixes `connect ENETUNREACH ... Local (::0)` seen with nodemailer.
+try {
+    dns.setDefaultResultOrder("ipv4first");
+} catch (_e) {
+    // Older Node versions may not support this; ignore.
+}
 const express = require('express');
 const app = express();
 const mongoose = require("mongoose");
