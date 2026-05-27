@@ -21,6 +21,9 @@ const ForgetPassword = () => {
   const [isResettingPassword, setIsResettingPassword] = useState(false);
 
   const getErrorMessage = (error) => {
+    const rawMessage = String(error?.message || "");
+    if (/timeout/i.test(rawMessage)) return "Connection timeout";
+    if (/network error/i.test(rawMessage)) return "Network error";
     return (
       error?.response?.data?.message ||
       error?.response?.data?.error ||
@@ -40,7 +43,11 @@ const ForgetPassword = () => {
        if (isSendingOtp) return;
        try {
         setIsSendingOtp(true);
-        const {data} = await axios.post(backendUrl + '/forget-password',{email});
+        const {data} = await axios.post(
+          backendUrl + '/forget-password',
+          { email },
+          { timeout: 120000 }
+        );
         data.success ? toast.success(data.message) : toast.error(data.message)
         data.success && setIsEmailSent(true)
        } catch (error) {
