@@ -5,6 +5,36 @@ const MAIL_WAIT_MS = Number(process.env.MAIL_WAIT_MS || 6000);
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+function generateOtp() {
+    return String(Math.floor(100000 + Math.random() * 900000));
+}
+
+function buildOtpMailOptions(userEmail, otp) {
+    return {
+        from: process.env.SENDER_EMAIL,
+        to: userEmail,
+        subject: "Password Reset Otp",
+        text: `Your otp for reseting your password is ${otp}. Use this OTP to proceed with resetting your password.`,
+    };
+}
+
+async function invalidateResetOtp(user) {
+    user.resetOtp = "";
+    user.resetOtpExpiresAt = 0;
+    await user.save();
+}
+
+async function sendMailWithBudget(sendPromise, budgetMs) {
+    let sentWithinBudget = false;
+    await Promise.race([
+        sendPromise.then(() => {
+            sentWithinBudget = true;
+        }),
+        wait(budgetMs),
+    ]);
+    return sentWithinBudget;
+}
+
 module.exports.sendResetOtp = async (req, res) =>{
     const {email} = req.body || {};
     // console.log(email)
@@ -16,43 +46,22 @@ module.exports.sendResetOtp = async (req, res) =>{
         if(!user) {
         return res.json({success: false, message: 'User not found'});
         }
-        const otp = String(Math.floor(100000 + Math.random() * 900000));
+        const otp = generateOtp();
         user.resetOtp = otp;
         user.resetOtpExpiresAt = Date.now() + 15 * 60 * 1000;
 
         await user.save();
 
-    const mailOption = {
-    from : process.env.SENDER_EMAIL || process.env.SMTP_USER,
-        to: user.email,
-        subject: "Password Reset Otp",
-        text: `Your otp for reseting your password is ${otp}. Use this OTP to proceed with resetting your password.`
-        
-        // html: PASSWORD_RESET_TEMPLATE.replace('{OTP}', otp).replace('{Date}',new Date().toLocaleDateString('en-GB', {
-        //              day: '2-digit',
-        //              month: 'short',
-        //              year: 'numeric'
-        //             })).replace('{name}',user.name)
-    }
+        const mailOptions = buildOtpMailOptions(user.email, otp);
+        const sendPromise = transporter.sendMail(mailOptions);
 
-        // Kick off email send.
-        const sendPromise = transporter.sendMail(mailOption);
-
-        // Wait a short bounded time for SMTP; if it's slow, don't block the API response.
         let mailSentWithinBudget = false;
         try {
-            await Promise.race([
-                sendPromise.then(() => {
-                    mailSentWithinBudget = true;
-                }),
-                wait(MAIL_WAIT_MS),
-            ]);
+            mailSentWithinBudget = await sendMailWithBudget(sendPromise, MAIL_WAIT_MS);
         } catch (error) {
             // If sending fails quickly, invalidate OTP so user can request again.
             try {
-                user.resetOtp = "";
-                user.resetOtpExpiresAt = 0;
-                await user.save();
+                await invalidateResetOtp(user);
             } catch (_e) {
                 // ignore
             }
@@ -72,9 +81,7 @@ module.exports.sendResetOtp = async (req, res) =>{
         if (!mailSentWithinBudget) {
             sendPromise.catch(async (error) => {
                 try {
-                    user.resetOtp = "";
-                    user.resetOtpExpiresAt = 0;
-                    await user.save();
+                    await invalidateResetOtp(user);
                 } catch (_e) {
                     // ignore
                 }
