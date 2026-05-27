@@ -1,6 +1,10 @@
 const User = require("../model/userModel.js");
 const transporter = require("../config/nodemailer");
 
+const MAIL_WAIT_MS = Number(process.env.MAIL_WAIT_MS || 6000);
+
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 module.exports.sendResetOtp = async (req, res) =>{
     const {email} = req.body || {};
     // console.log(email)
@@ -19,7 +23,7 @@ module.exports.sendResetOtp = async (req, res) =>{
         await user.save();
 
     const mailOption = {
-        from : process.env.SENDER_EMAIL,
+    from : process.env.SENDER_EMAIL || process.env.SMTP_USER,
         to: user.email,
         subject: "Password Reset Otp",
         text: `Your otp for reseting your password is ${otp}. Use this OTP to proceed with resetting your password.`
@@ -30,11 +34,21 @@ module.exports.sendResetOtp = async (req, res) =>{
         //              year: 'numeric'
         //             })).replace('{name}',user.name)
     }
-        // Respond fast; send email in background so the user doesn't wait on SMTP.
-        res.json({ success: true, message: "Otp sent to your email"});
 
-        transporter.sendMail(mailOption).catch(async (error) => {
-            // If sending fails, invalidate OTP so user can request again.
+        // Kick off email send.
+        const sendPromise = transporter.sendMail(mailOption);
+
+        // Wait a short bounded time for SMTP; if it's slow, don't block the API response.
+        let mailSentWithinBudget = false;
+        try {
+            await Promise.race([
+                sendPromise.then(() => {
+                    mailSentWithinBudget = true;
+                }),
+                wait(MAIL_WAIT_MS),
+            ]);
+        } catch (error) {
+            // If sending fails quickly, invalidate OTP so user can request again.
             try {
                 user.resetOtp = "";
                 user.resetOtpExpiresAt = 0;
@@ -43,7 +57,30 @@ module.exports.sendResetOtp = async (req, res) =>{
                 // ignore
             }
             console.error("sendResetOtp: sendMail failed", error);
+            return res.json({ success: false, message: error?.message || "Failed to send OTP" });
+        }
+
+        // Respond (fast). If mail is still in-flight, it will continue in background.
+        res.json({
+            success: true,
+            message: mailSentWithinBudget
+                ? "Otp sent to your email"
+                : "OTP request received. Email may take a few seconds — please check your inbox.",
         });
+
+        // If the send is still running, attach a late-failure handler.
+        if (!mailSentWithinBudget) {
+            sendPromise.catch(async (error) => {
+                try {
+                    user.resetOtp = "";
+                    user.resetOtpExpiresAt = 0;
+                    await user.save();
+                } catch (_e) {
+                    // ignore
+                }
+                console.error("sendResetOtp: sendMail failed (late)", error);
+            });
+        }
         
     } catch(error) {
         return res.json({success: false, message:error.message});
