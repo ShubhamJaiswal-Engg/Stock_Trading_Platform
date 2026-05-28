@@ -53,6 +53,12 @@ export const watchlist = [
     percent: "1.04%",
     isDown: false,
   },
+  {
+    name: "Shubham",
+    price: 512.4,
+    percent: "1.04%",
+    isDown: false,
+  },
 ];
 
 // holdings
