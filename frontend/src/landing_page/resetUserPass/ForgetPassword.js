@@ -5,6 +5,11 @@ import { toast, ToastContainer } from 'react-toastify';
 import EmailIcon from '@mui/icons-material/Email';
 import LockIcon from '@mui/icons-material/Lock';
 import { BACKEND_URL } from '../../config/urls.js';
+import { 
+  sendOTPEmail, 
+  verifyOTP, 
+  resetPasswordWithOTP
+} from '../../util/emailjs.js';
 
 const ForgetPassword = () => {
   const navigate = useNavigate();
@@ -41,17 +46,27 @@ const ForgetPassword = () => {
      const onSubmitEmail = async (e)=>{
        e.preventDefault()
        if (isSendingOtp) return;
+       
+       if (!email) {
+         toast.error('Please enter your email address');
+         return;
+       }
+
        try {
         setIsSendingOtp(true);
-        const {data} = await axios.post(
-          backendUrl + '/forget-password',
-          { email },
-          { timeout: 120000 }
-        );
-        data.success ? toast.success(data.message) : toast.error(data.message)
-        data.success && setIsEmailSent(true)
+        
+        // Send OTP via backend (OTP stored securely in MongoDB)
+        const result = await sendOTPEmail(email);
+        
+        if (result.success) {
+          toast.success(result.message);
+          setIsEmailSent(true);
+        } else {
+          toast.error(result.message);
+        }
        } catch (error) {
-        toast.error(getErrorMessage(error));
+        toast.error('Failed to send OTP. Please try again.');
+        console.error(error);
        } finally {
         setIsSendingOtp(false);
        }
@@ -61,12 +76,26 @@ const ForgetPassword = () => {
        e.preventDefault();
         try {
         if (isVerifyingOtp) return;
+        
+        if (!otp) {
+          toast.error('Please enter the OTP');
+          return;
+        }
+        
         setIsVerifyingOtp(true);
-        const {data} = await axios.post(backendUrl + '/verify-otp',{email, otp});
-        data.success ? toast.success(data.message) : toast.error(data.message)
-        data.success && setIsOtpSubmited(true);
+        
+        // Verify OTP with backend (checks against MongoDB)
+        const result = await verifyOTP(email, otp);
+        
+        if (result.success) {
+          toast.success(result.message);
+          setIsOtpSubmited(true);
+        } else {
+          toast.error(result.message);
+        }
        } catch (error) {
-        toast.error(getErrorMessage(error));
+        toast.error('Error verifying OTP. Please try again.');
+        console.error(error);
        } finally {
         setIsVerifyingOtp(false);
        }
@@ -74,14 +103,32 @@ const ForgetPassword = () => {
 
       const onSubmitNewPassword = async (e)=>{
        e.preventDefault();
+       
+       if (!newPassword) {
+         toast.error('Please enter a new password');
+         return;
+       }
+
+       if (newPassword.length < 6) {
+         toast.error('Password should be at least 6 characters long');
+         return;
+       }
+
        try {
         if (isResettingPassword) return;
         setIsResettingPassword(true);
-        const {data} = await axios.post(backendUrl + '/reset-password', {email,otp,newPassword});
-        data.success ? toast.success(data.message) : toast.error(data.message)
-        setTimeout(() => {
-          data.success && navigate('/login', { replace: true })
-        }, 2000);
+        
+        // Reset password via backend (backend validates OTP again for extra security)
+        const result = await resetPasswordWithOTP(email, otp, newPassword);
+        
+        if (result.success) {
+          toast.success(result.message);
+          setTimeout(() => {
+            navigate('/login', { replace: true })
+          }, 2000);
+        } else {
+          toast.error(result.message);
+        }
        } catch (error) {
         toast.error(getErrorMessage(error));
        } finally {
