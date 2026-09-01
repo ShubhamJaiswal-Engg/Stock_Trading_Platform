@@ -1,130 +1,99 @@
-const transporter = require("../config/nodemailer");
+// In-memory OTP storage (for production, use Redis or database)
+const otpStore = new Map();
 
-const BREVO_SEND_EMAIL_URL = "https://api.brevo.com/v3/smtp/email";
+const OTP_EXPIRY_TIME = 10 * 60 * 1000; // 10 minutes
 
-const DEFAULT_FROM_NAME = process.env.MAIL_FROM_NAME || "StockX";
-const DEFAULT_FROM_EMAIL =
-  process.env.SENDER_EMAIL ||
-  process.env.MAIL_FROM_EMAIL ||
-  process.env.SMTP_USER ||
-  process.env.BREVO_SMTP_USER ||
-  process.env.BREVO_SMTP_LOGIN;
+/**
+ * Generate and store OTP
+ * @param {string} email - User email
+ * @param {number} length - OTP length (default: 6)
+ * @returns {string} Generated OTP
+ */
+function generateAndStoreOTP(email, length = 6) {
+  // Generate OTP
+  const otp = Math.floor(
+    Math.pow(10, length - 1) + Math.random() * (Math.pow(10, length) - Math.pow(10, length - 1))
+  ).toString();
 
-function isLikelyBrevoSmtpKey(value) {
-  if (!value) return false;
-  const key = String(value).trim();
-  // Brevo SMTP keys are typically prefixed with `xsmtpsib-`.
-  return key.toLowerCase().startsWith("xsmtpsib-");
-}
-
-function getBrevoApiKey() {
-  const raw = process.env.BREVO_API_KEY;
-  if (!raw) return null;
-  const key = String(raw).trim();
-  if (!key) return null;
-  if (isLikelyBrevoSmtpKey(key)) return null;
-  return key;
-}
-
-function withTimeout(ms) {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), ms);
-  return {
-    signal: controller.signal,
-    clear: () => clearTimeout(timeoutId),
-  };
-}
-
-async function sendViaBrevoApi({ toEmail, subject, text, fromEmail, fromName }) {
-  const apiKey = getBrevoApiKey();
-  if (!apiKey) {
-    if (isLikelyBrevoSmtpKey(process.env.BREVO_API_KEY)) {
-      throw new Error(
-        "BREVO_API_KEY looks like an SMTP key (xsmtpsib-...). Use a Brevo API key (usually xkeysib-...) or remove BREVO_API_KEY to send via SMTP."
-      );
-    }
-    throw new Error("BREVO_API_KEY is missing");
-  }
-
-  const timeoutMs = Number(process.env.BREVO_API_TIMEOUT_MS || 10_000);
-  const { signal, clear } = withTimeout(timeoutMs);
-
-  try {
-    const response = await fetch(BREVO_SEND_EMAIL_URL, {
-      method: "POST",
-      headers: {
-        accept: "application/json",
-        "content-type": "application/json",
-        "api-key": apiKey,
-      },
-      body: JSON.stringify({
-        sender: {
-          name: fromName || DEFAULT_FROM_NAME,
-          email: fromEmail || DEFAULT_FROM_EMAIL,
-        },
-        to: [{ email: toEmail }],
-        subject,
-        textContent: text,
-      }),
-      signal,
-    });
-
-    const raw = await response.text();
-    let parsed;
-    try {
-      parsed = raw ? JSON.parse(raw) : null;
-    } catch (_e) {
-      parsed = raw;
-    }
-
-    if (!response.ok) {
-      const detail =
-        (parsed && (parsed.message || parsed.error || parsed.code)) ||
-        (typeof parsed === "string" ? parsed : "Brevo API error");
-      throw new Error(`Brevo API failed (${response.status}): ${detail}`);
-    }
-
-    return parsed;
-  } finally {
-    clear();
-  }
-}
-
-async function sendViaSmtp({ toEmail, subject, text, fromEmail }) {
-  if (!transporter) {
-    throw new Error("SMTP transporter not configured");
-  }
-  return transporter.sendMail({
-    from: fromEmail || DEFAULT_FROM_EMAIL,
-    to: toEmail,
-    subject,
-    text,
+  // Store OTP with expiry
+  const expiryTime = Date.now() + OTP_EXPIRY_TIME;
+  otpStore.set(email, {
+    otp,
+    expiryTime,
+    attempts: 0,
   });
+
+  return otp;
 }
 
-async function sendTextEmail({ toEmail, subject, text, fromEmail, fromName }) {
-  // Prefer Brevo HTTP API in production (avoids outbound SMTP port blocks/timeouts).
-  if (process.env.BREVO_API_KEY && isLikelyBrevoSmtpKey(process.env.BREVO_API_KEY)) {
-    console.warn(
-      "[mailer] BREVO_API_KEY appears to be an SMTP key (xsmtpsib-...). Falling back to SMTP transport."
-    );
+/**
+ * Verify OTP (without deleting)
+ * @param {string} email - User email
+ * @param {string} otp - OTP to verify
+ * @param {boolean} deleteAfterVerify - Delete OTP after successful verification (default: false)
+ * @returns {object} { valid: boolean, message: string }
+ */
+function verifyOTP(email, otp, deleteAfterVerify = false) {
+  if (!otpStore.has(email)) {
+    return { valid: false, message: 'OTP not found or expired' };
   }
 
-  if (getBrevoApiKey()) {
-    return sendViaBrevoApi({ toEmail, subject, text, fromEmail, fromName });
+  const storedData = otpStore.get(email);
+
+  // Check if OTP has expired
+  if (Date.now() > storedData.expiryTime) {
+    otpStore.delete(email);
+    return { valid: false, message: 'OTP has expired' };
   }
-  return sendViaSmtp({ toEmail, subject, text, fromEmail });
+
+  // Check max attempts (5 attempts allowed)
+  if (storedData.attempts >= 5) {
+    otpStore.delete(email);
+    return { valid: false, message: 'Maximum attempts exceeded. Request a new OTP' };
+  }
+
+  // Verify OTP
+  if (storedData.otp === otp.toString()) {
+    if (deleteAfterVerify) {
+      otpStore.delete(email);
+    } else {
+      // Mark as verified but keep in store for password reset
+      storedData.verified = true;
+    }
+    return { valid: true, message: 'OTP verified successfully' };
+  }
+
+  // Increment attempts
+  storedData.attempts += 1;
+  return { valid: false, message: `Invalid OTP. ${5 - storedData.attempts} attempts remaining` };
 }
 
-async function sendResetOtpEmail(toEmail, otp) {
-  return sendTextEmail({
-    toEmail,
-    subject: "Password Reset Otp",
-    text: `Your otp for reseting your password is ${otp}. Use this OTP to proceed with resetting your password.`,
-  });
+/**
+ * Get remaining time for OTP
+ * @param {string} email - User email
+ * @returns {number} Remaining time in seconds
+ */
+function getOTPExpiryTime(email) {
+  if (!otpStore.has(email)) {
+    return 0;
+  }
+
+  const storedData = otpStore.get(email);
+  const remainingTime = Math.max(0, storedData.expiryTime - Date.now());
+  return Math.ceil(remainingTime / 1000);
+}
+
+/**
+ * Clear OTP for an email
+ * @param {string} email - User email
+ */
+function clearOTP(email) {
+  otpStore.delete(email);
 }
 
 module.exports = {
-  sendTextEmail,
-  sendResetOtpEmail,
+  generateAndStoreOTP,
+  verifyOTP,
+  getOTPExpiryTime,
+  clearOTP,
 };
